@@ -44,7 +44,7 @@ class Agent[D,T]:
                  result_type:Optional[type]= None,
                  
                  verbose:bool = True
-                 ):
+                ):
         
         """
 Args:
@@ -295,7 +295,9 @@ Args:
         if result.is_ok():
             response = result.unwrap()
             # TODO Generict[T] T 约束 
-            res = DeepseekResult(response=response,result_type=self.result_type)
+            res = DeepseekResult(response=response,
+                                 messages=self.messages,
+                                 result_type=self.result_type)
             self.update_result(res)
             return res 
         else:
