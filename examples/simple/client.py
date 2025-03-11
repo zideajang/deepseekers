@@ -61,18 +61,5 @@ with httpx.Client() as client:
     deps = MyDeps(http_client=client)
     result = agent.run(human_message,{'deps':deps})
     print(result.get_text())
-    # for pizza in result.get_data().pizza_list:
-    #     console.print(f"{pizza.name}")
     
-# @agent.system_prompt  
-# async def get_system_prompt(ctx: RunContext[MyDeps]) -> str:  
-#     response = await ctx.deps.http_client.get(  
-#         'https://example.com',
-#         headers={'Authorization': f'Bearer {ctx.deps.api_key}'},  
-#     )
-#     response.raise_for_status()
-#     return f'Prompt: {response.text}
-# result = agent.run(human_message)
-# for pizza in result.get_data().pizza_list:
-#     console.print(Panel(pizza.description,title=f"🍕 {pizza.name}"))
     
