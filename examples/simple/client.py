@@ -31,8 +31,6 @@ Pizzas
         console.print(response.text)
         return SystemMessage(content="")
 
-
-
 class Pizza(BaseModel):
     name:str = Field(title="name of pizza",description="披萨的名称",examples=["海鲜披萨"])
     description:str = Field(title="description of pizza",description="对于披萨的简单介绍",examples=["丰富的海鲜如虾、鱿鱼和贻贝搭配番茄酱和奶酪，海洋的味道在口中爆发。"])
@@ -45,7 +43,6 @@ class PizzaList(BaseModel):
 # 初始化一个 client
 client = DeepSeekClient(name="deepseek-client")
 
-# system_message = SystemMessage(content="you are very help assistant")
 human_message = HumanMessage(content="从 Pizzas 数据筛选配料中有蘑菇的披萨")
 
 
