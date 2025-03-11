@@ -38,7 +38,7 @@ class Agent[D,T]:
                  context:Optional[Union[Dict[str,Any],Callable[...,Dict[str,Any]]]]=None,
                 #  TODO 以后 system message 增加支持模板类
                 # 运行时可以动态传一些参数 system，systemplate.render()
-                 system_message:Optional[Union[str,SystemMessage]] = None,
+                 system_message:Optional[Union[str,SystemMessage,Callable[...,Union[str,SystemMessage]]]] = None,
                 
                  deps_type:Optional[type] = None,
                  result_type:Optional[type]= None,
@@ -106,12 +106,17 @@ Args:
                 else:
                     self.add_message(system_message)
 
+            elif callable(system_message):
+                self.add_message(system_message)
+
     # @property
     # def system_prompt_content(self):
     #     if len(self.messages) > 0 and self.messages[0].role == MessageRole.System:
     #         return self.messages[0].content
     #     else:
     #         return ""
+
+
     
     def tool(self,func):
         self.bind_tool(func.__name__,func)
@@ -212,6 +217,8 @@ Args:
 
         elif isinstance(message,str):
             message = HumanMessage(content=message)
+        elif callable(message):
+            message = message
         else:
             raise ValueError(f"不支持 query 类型 {type(query)}, 类型应该为 string 或者 HumanSystem")
         self.messages.append(message)
@@ -236,21 +243,23 @@ Args:
             # TODO 有待考量具体设计
             deps:Dict[str,Any]=None)->Result:
         
+        # 更新 dependence
         if deps:
             deps_value:D = deps.pop('deps', None)
             self.update_deps(deps_value)
 
         self.add_message(query)
-        if self.deps:
-            # deps_value
-            # deps_type
-            self.messages[-1].content += self.deps.model_dump_json()
+
+        # 动态更新 deps
+        if self.deps and callable(self.messages[0]):
+            # self.messages[-1].content += self.deps.model_dump_json()
+            self.messages[0] = self.messages[0](self.deps)
         
-        messsages = self.messages_to_dict()
-        # 
+        messages = self.messages_to_dict()
+        print(messages) 
         config = {
             "model":self.model_name,
-            "messages":messsages,
+            "messages":messages,
         }
 
         if deps:
