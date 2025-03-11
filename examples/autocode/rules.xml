@@ -1,0 +1,20 @@
+
+<instructions>
+    <instruction>every time we use "with open" use encoding="utf-8"</instruction>
+    <instruction>major variables should be all caps Variables on top of the script and not user input taking unless otherwise</instruction>
+    <instruction>specified(including model names)
+    if there are models in the script like deepseek-chat </instruction>
+    <instruction>调用 deekseek
+        <code-example lang="python">
+        # 获取 deepseek 的 API 和 base_url
+        def get_config():
+            with open("D:/config.yaml","r") as file:
+                config = yaml.safe_load(file)
+            return config
+        DEEPSEEK_API_KEY = get_config()['DEEPSEEK_API_KEY']
+        DEEPSEEK_BASE_URL = 'https://api.deepseek.com'
+        </code-example>
+    </instruction>
+    
+</instructions>
+
