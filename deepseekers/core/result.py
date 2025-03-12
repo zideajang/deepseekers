@@ -52,7 +52,7 @@ class DeepseekResult[T](Result):
         return self.messages 
 
     def get_message(self):
-        return self.result_message
+        return [self.result_message]
     
     def get_text(self):
         return str(self.response.choices[0].message.content)

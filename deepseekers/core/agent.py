@@ -8,7 +8,7 @@ import inspect
 from typing import Dict,Any,Union,Optional,List,Callable
 from functools import wraps
 import inspect
-from deepseekers.core import Client
+from deepseekers.core import Client,DeepSeekClient
 from deepseekers.core.message import SystemMessage,AIMessage,HumanMessage,BaseMessage,MessageRole
 
 from deepseekers.core.result import Result,ErrorResult,DeepseekResult
@@ -33,8 +33,8 @@ __CTX_VARS_NAME__ = "context"
 class Agent[D,T]:
     def __init__(self,
                  name:str,
-                 client:Client,
-                 model_name:str,
+                 client:Optional[Client] = DeepSeekClient(name='deepseek-client'),
+                 model_name:Optional[str] = 'deepseek-chat',
                  context:Optional[Union[Dict[str,Any],Callable[...,Dict[str,Any]]]]=None,
                 #  TODO 以后 system message 增加支持模板类
                 # 运行时可以动态传一些参数 system，systemplate.render()
@@ -64,6 +64,8 @@ Args:
         # 过滤条件就是 is_hidden
         self.messages:List[BaseMessage] = []
 
+        self.ResultType:type = DeepseekResult
+
         self.verbose = verbose
         self.model_name = model_name
         self.deps_type = deps_type
@@ -81,7 +83,7 @@ Args:
         # - 该工具是否为授权工具，如果不是授权工具，执行需要用户确认
         self.available_tools:Dict[str,Callable] = {}
         self.result_type = result_type
-
+        self.system_message  = None
         
         if system_message:
             if isinstance(system_message,str):
@@ -109,14 +111,7 @@ Args:
             elif callable(system_message):
                 self.add_message(system_message)
 
-    # @property
-    # def system_prompt_content(self):
-    #     if len(self.messages) > 0 and self.messages[0].role == MessageRole.System:
-    #         return self.messages[0].content
-    #     else:
-    #         return ""
-
-
+            
     
     def tool(self,func):
         self.bind_tool(func.__name__,func)
@@ -135,7 +130,16 @@ Args:
             # TODO
             func(self.context,*args, **kwargs)
         return wrapper
-    
+    # @property
+    # def system_message(self):
+    #     return self.messages[0] if self.messages[0] and isinstance(self.messages[0],SystemMessage) else None
+
+    def bind_tools(self,tools):
+        # TODO 需要进行校验
+        for tool in tools:
+            if callable(tool):
+                self.bind_tool(tool.__name__,tool)
+
     def bind_tool(self,tool_name:str,func:Callable):
         # console.print("bind_tool")
         self.available_tools[tool_name if tool_name else func.__name__] = func
@@ -143,12 +147,12 @@ Args:
     def unbind_tool(self,func):
         self.available_tools.pop(func.__name__)
         # TODO 遍历 self.tools 中所有工具，删除目标对象
-        if len(self.tools) == 1:
-            self.tools = []
-        elif len(self.tools) > 1:
-            for i in range(len(self.tools)):
-                if self.tools[i].name == func.__name__:
-                    del self.tools[i]
+        # if len(self.tools) == 1:
+        #     self.tools = []
+        # elif len(self.tools) > 1:
+        #     for i in range(len(self.tools)):
+        #         if self.tools[i].name == func.__name__:
+        #             del self.tools[i]
         # console.print(self.tools)        
 
     # TODO 动态注入 agent
@@ -167,20 +171,20 @@ Args:
 
                 # 获取函数的名字
                 func_name = func.__name__
-                parameters = list(func_signature.parameters.keys())
-                timestr = time.strftime("%Y%m%d-%H%M%S")
-                prompt_id = hashlib.md5(func_code.encode()).hexdigest()
-                pormpt_dict ={
-                    "id":prompt_id,
-                    "name":func_name,
-                    "decription":func.__doc__,
-                    "code":func_code,
-                    "parameters": parameters,
-                    "model_name":self.model_name,
-                    "time":timestr
-                }
-                with open(f"./prompt_store_v2/{prompt_id}-{timestr}.pkl", "wb") as f:
-                    pickle.dump(pormpt_dict, f)
+                # parameters = list(func_signature.parameters.keys())
+                # timestr = time.strftime("%Y%m%d-%H%M%S")
+                # prompt_id = hashlib.md5(func_code.encode()).hexdigest()
+                # pormpt_dict ={
+                #     "id":prompt_id,
+                #     "name":func_name,
+                #     "decription":func.__doc__,
+                #     "code":func_code,
+                #     "parameters": parameters,
+                #     "model_name":self.model_name,
+                #     "time":timestr
+                # }
+                # with open(f"./prompt_store_v2/{prompt_id}-{timestr}.pkl", "wb") as f:
+                #     pickle.dump(pormpt_dict, f)
                 self._update_system_message(prompt)
                 return prompt
             return wrapper
@@ -256,7 +260,6 @@ Args:
             self.messages[0] = self.messages[0](self.deps)
         
         messages = self.messages_to_dict()
-        print(messages) 
         config = {
             "model":self.model_name,
             "messages":messages,
@@ -283,8 +286,8 @@ Args:
         
         if self.result_type:
             config['response_format'] = {
-            'type': 'json_object'
-        }
+                'type': 'json_object'
+            }
         
         self.update_model_config(config)
         if self.verbose:
@@ -295,7 +298,7 @@ Args:
         def result()->RecursionError:
             try:
                 response = self.client.chat(self.model_config)
-                # console.print(response)
+                # print(response)
                 return ResponseOrError.from_response(response)
             except Exception as e:
                 return ResponseOrError.from_error(e)
@@ -304,9 +307,11 @@ Args:
         if result.is_ok():
             response = result.unwrap()
             # TODO Generict[T] T 约束 
-            res = DeepseekResult(response=response,
+            # print(response)
+            res = self.ResultType(response=response,
                                  messages=self.messages,
                                  result_type=self.result_type)
+            
             self.update_result(res)
             return res 
         else:
@@ -321,6 +326,6 @@ Clent: {self.client.name}
 {'-'*20}
 system message: \n
 {self.system_message}
-{[ tool['function']['name'] for tool in self.tools ] if self.tools else "暂时没有提供任何工具"}
+{[ tool['function']['name'] for tool in self.available_tools ] if self.available_tools else "暂时没有提供任何工具"}
 """
     

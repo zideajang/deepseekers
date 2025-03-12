@@ -1,6 +1,6 @@
+import re
 import json
 import inspect
-import re
 import hanlp
 
 from typing import List, get_type_hints
@@ -14,11 +14,14 @@ from rich.markdown import Markdown
 
 console = Console()
 
-def _json_schema_to_example( result_type:type):
+def _json_schema_to_example( result_type:type,is_flag:bool=True):
     if not hasattr(result_type,'model_json_schema'):
         raise TypeError("现在仅支持继承 BaseModel 的类")
-    res = """
-EXAMPLE JSON OUTPUT"""
+    if is_flag:
+        res = """
+    EXAMPLE JSON OUTPUT"""
+    else:
+        res = ""
     json_schema = result_type.model_json_schema()
     if 'properties' in  json_schema:
         example = {}
@@ -29,6 +32,15 @@ EXAMPLE JSON OUTPUT"""
 """
     return res
 
+def is_snake_case(s):
+    """
+    检查字符串是否符合 snake_case 命名规范。
+    :param s: 要检查的字符串
+    :return: 如果符合规范返回 True，否则返回 False
+    """
+    # 正则表达式规则
+    pattern = r'^[a-z][a-z0-9]*(_[a-z0-9]+)*$'
+    return bool(re.match(pattern, s))
 
 
 def is_markdown(text):

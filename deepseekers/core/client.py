@@ -2,6 +2,7 @@ from abc import ABC,abstractmethod
 import yaml
 from typing import Any
 from openai import OpenAI
+from ollama import ChatResponse, chat
 
 # zideajang/deepseekers
 
@@ -48,3 +49,5 @@ class DeepSeekClient(Client):
         # TODO 优化对于 Config 进行 constraints 或者给与类型
         response = self.client.chat.completions.create(**config)
         return response
+    
+

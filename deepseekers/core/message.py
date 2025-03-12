@@ -47,8 +47,6 @@ class BaseMessage(BaseModel):
 class ThingingMssage(BaseMessage):
     role:MessageRole = MessageRole.Thinking
 
-
-
 class HumanMessage(BaseMessage):
     role:MessageRole  = MessageRole.Human
     

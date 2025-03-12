@@ -16,6 +16,14 @@ class MyDeps:
     url:str = "http://127.0.0.1:8000/pizzas"
 
 
+class Pizza(BaseModel):
+    name:str = Field(title="name of pizza",description="披萨的名称",examples=["海鲜披萨"])
+    description:str = Field(title="description of pizza",description="对于披萨的简单介绍",examples=["丰富的海鲜如虾、鱿鱼和贻贝搭配番茄酱和奶酪，海洋的味道在口中爆发。"])
+
+class PizzaList(BaseModel):
+    pizza_list:List[Pizza] = Field(title="pizza list",description="给出一个披萨列表",examples=[f"""
+{_json_schema_to_example(Pizza)}
+"""])
 
 def system_message(deps:MyDeps)->SystemMessage:
     response = deps.http_client.get(deps.url)
@@ -25,6 +33,7 @@ def system_message(deps:MyDeps)->SystemMessage:
         return SystemMessage(content=f"""
 Pizzas
 {json.dumps(pizza_list)}
+{_json_schema_to_example(Pizza)}
 """)
     else:
         console.print_exception(f"请求失败，状态码：{response.status_code}")
@@ -46,12 +55,15 @@ client = DeepSeekClient(name="deepseek-client")
 human_message = HumanMessage(content="从 Pizzas 数据筛选配料中有蘑菇的披萨")
 
 
+
+
 agent = Agent(
     name="pizza_generator",
     model_name="deepseek-chat",
     system_message=system_message,
     client=client,
     context={},
+    result_type=PizzaList
     )
 
 with httpx.Client() as client:
