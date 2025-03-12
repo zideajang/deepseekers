@@ -22,6 +22,9 @@
 - 他是变化的，不过引入新的特征，以便于适应当先 LLM 快速的迭代
 - 最小集，希望在不断跟随 LLM 过程让版本切换成本达到最小
 
+## 相关教程
+![哔哩哔哩相关视频](images/bilibili_screenshot.jpg)
+
 ## example
 ## 😀 hello 第一行代码
 ### 初始化 client 🎉
