@@ -11,6 +11,7 @@ class Result[T](ABC):
 
     def __init__(self,response):
         self.response = response
+        self.result_message = "空消息"
 
     @abstractmethod
     def get_message(self)->BaseMessage:
@@ -33,6 +34,8 @@ class DeepseekResult[T](Result):
         self.messages =  messages or []
         self.response = response
         self.result_type = result_type
+
+        # print(self.response)
 
         if self.response.choices[0].message.content:
             self.result_message =  AIMessage(content=self.response.choices[0].message.content)

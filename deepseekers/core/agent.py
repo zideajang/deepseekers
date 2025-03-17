@@ -1,14 +1,12 @@
-import hashlib
-import time
-import pickle
+from abc import ABC
 import inspect
-
-
+from typing import Protocol
 
 from typing import Dict,Any,Union,Optional,List,Callable
 from functools import wraps
 import inspect
 from deepseekers.core import Client,DeepSeekClient
+from deepseekers.core.context_manager import ContextManager
 from deepseekers.core.message import SystemMessage,AIMessage,HumanMessage,BaseMessage,MessageRole
 
 from deepseekers.core.result import Result,ErrorResult,DeepseekResult
@@ -22,27 +20,57 @@ D: Depense -> 前奏，Agent 启动需要具备哪些，例如需要连接网络
 
 T:Result 也就是返回数据结构，json Result<T> 来解析数据
 """
+
+
+
+class AgentLifeCycleInterface(Protocol):
+    def on_bind_tool(self,agent_name,tool_name):
+        ...
+
+    def on_tool_call(self,tool_name,tool_arguments):
+        ...
+
+    def on_end_tool_call(self,tool_name,tool_arguments):
+        ...
+    def on_run_agent(self):
+        ...
+
+    def on_end_run_agent(self):
+        ...
+
+
+class AgentLifeCycle:
+    def __init__(self,agent:"Agent"):
+        self.agent:"Agent" = agent
+        self.agent.lifecycle = self
+
+
 def chat(f):
     return f()
 
 class AgentDep:
     pass
 
+ContextType = Optional[Union[Dict[str,Any],Callable[...,Dict[str,Any]],ContextManager]]
+
 __CTX_VARS_NAME__ = "context"
 
-class Agent[D,T]:
+class Agent[D,T](ABC):
     def __init__(self,
                  name:str,
                  client:Optional[Client] = DeepSeekClient(name='deepseek-client'),
                  model_name:Optional[str] = 'deepseek-chat',
-                 context:Optional[Union[Dict[str,Any],Callable[...,Dict[str,Any]]]]=None,
+                 context:ContextType=None,
                 #  TODO 以后 system message 增加支持模板类
                 # 运行时可以动态传一些参数 system，systemplate.render()
                  system_message:Optional[Union[str,SystemMessage,Callable[...,Union[str,SystemMessage]]]] = None,
                 
                  deps_type:Optional[type] = None,
                  result_type:Optional[type]= None,
-                 
+
+                 handoffs:Optional[List["Agent"]]=None,
+                 handoff_description:Optional[str|Callable[...,str]] = None,
+                 lifecylce:Optional[AgentLifeCycleInterface] = None,
                  verbose:bool = True
                 ):
         
@@ -68,11 +96,13 @@ Args:
 
         self.verbose = verbose
         self.model_name = model_name
-        self.deps_type = deps_type
+        
         self.deps = None
+        self.deps_type = deps_type
         # 共享上下文数据
         # TODO
-        self.context = context
+        self.context = context or {}
+        # 如果有依赖项，需要通过 context['deps'] 将依赖数据传入进来
         if self.deps_type:
             if 'deps' not in self.context.keys():
                 raise ValueError("需要在 context 提供 deps 字段内容")
@@ -84,6 +114,7 @@ Args:
         self.available_tools:Dict[str,Callable] = {}
         self.result_type = result_type
         self.system_message  = None
+        self.lifecycle = lifecylce
         
         if system_message:
             if isinstance(system_message,str):
@@ -111,6 +142,24 @@ Args:
             elif callable(system_message):
                 self.add_message(system_message)
 
+        if handoffs:
+            self.handoffs_dict = {}
+            self.system_message_content = ""
+            for agent in handoffs:
+                self.handoffs_dict[agent.name] = agent
+                    
+#                 self.system_message_content += f"""
+# EXAMPLE JSON OUTPUT:\n
+#                 {{
+# "description": "Which is the highest mountain in the world?",
+# "agent_name": "Mount Everest"
+# }}
+# """
+
+
+#             self.messages[0]
+
+
             
     
     def tool(self,func):
@@ -119,7 +168,8 @@ Args:
         def wrapper(*args, **kwargs):
             # self.available_tools[tool_name if tool_name else func.__name__] = func
             # TODO
-            func(*args, **kwargs)
+            result = func(*args, **kwargs)
+            return result
         return wrapper
     
     def tool_with_context(self,func):
@@ -128,7 +178,8 @@ Args:
         def wrapper(*args, **kwargs):
             # self.available_tools[tool_name if tool_name else func.__name__] = func
             # TODO
-            func(self.context,*args, **kwargs)
+            result = func(self.context,*args, **kwargs)
+            return result
         return wrapper
     # @property
     # def system_message(self):
@@ -142,6 +193,9 @@ Args:
 
     def bind_tool(self,tool_name:str,func:Callable):
         # console.print("bind_tool")
+
+        if self.lifecycle:
+            self.lifecycle.on_bind_tool(self.name,tool_name)
         self.available_tools[tool_name if tool_name else func.__name__] = func
 
     def unbind_tool(self,func):
@@ -292,6 +346,9 @@ Args:
         self.update_model_config(config)
         if self.verbose:
             print_config(self.name,self.model_config)
+
+        if self.lifecycle:
+            self.lifecycle.on_run_agent()
             
         # TODO 添加进度条 rich progresss
         @chat
@@ -305,16 +362,31 @@ Args:
 
 
         if result.is_ok():
+            if self.lifecycle:
+                self.lifecycle.on_end_run_agent()
             response = result.unwrap()
             # TODO Generict[T] T 约束 
             # print(response)
-            res = self.ResultType(response=response,
+            res:Result = self.ResultType(response=response,
                                  messages=self.messages,
                                  result_type=self.result_type)
             
+            if hasattr(self, 'handoffs_dict') and self.handoffs_dict:
+                # TODO
+                result_data = res.get_data()
+                if hasattr(result_data, 'agent_name'):
+                    if result_data.agent_name in self.handoffs_dict:
+                        if isinstance(query,str):
+                            res_again = self.handoffs_dict[result_data.agent_name].run(HumanMessage(content=query))
+                        else:
+                            res_again = self.handoffs_dict[result_data.agent_name].run(query)
+                        return res_again
+                
             self.update_result(res)
             return res 
         else:
+            if self.lifecycle:
+                self.lifecycle.on_end_run_agent()
             error = result.error
             return ErrorResult(response=error)
 
