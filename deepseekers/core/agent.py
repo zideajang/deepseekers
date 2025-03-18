@@ -71,6 +71,7 @@ class Agent[D,T](ABC):
                  handoffs:Optional[List["Agent"]]=None,
                  handoff_description:Optional[str|Callable[...,str]] = None,
                  lifecylce:Optional[AgentLifeCycleInterface] = None,
+                 span:Optional[Any] = None,
                  verbose:bool = True
                 ):
         
@@ -115,6 +116,8 @@ Args:
         self.result_type = result_type
         self.system_message  = None
         self.lifecycle = lifecylce
+
+        self.handoff_description = handoff_description
         
         if system_message:
             if isinstance(system_message,str):
@@ -141,26 +144,28 @@ Args:
 
             elif callable(system_message):
                 self.add_message(system_message)
+            
 
         if handoffs:
             self.handoffs_dict = {}
-            self.system_message_content = ""
+            system_message_content = ""
             for agent in handoffs:
                 self.handoffs_dict[agent.name] = agent
-                    
-#                 self.system_message_content += f"""
-# EXAMPLE JSON OUTPUT:\n
-#                 {{
-# "description": "Which is the highest mountain in the world?",
-# "agent_name": "Mount Everest"
-# }}
-# """
+                if agent.handoff_description is None:
+                    raise ValueError(f"需要初始化 {self.handoff_description}")
+                system_message_content += f"""
+{agent.name}
+{agent.handoff_description}
+"""         
+            if self.messages and isinstance(self.messages[0],BaseMessage):
+                content = self.messages[0].content
+                self.messages[0] = SystemMessage(content=content+system_message_content)
+          
+        if self.messages and isinstance(self.messages[0],BaseMessage):
+            self.system_message = self.messages[0]
 
-
-#             self.messages[0]
-
-
-            
+    def update_handoff_description(self,handoff_description):
+        self.handoff_description = handoff_description
     
     def tool(self,func):
         self.bind_tool(func.__name__,func)
