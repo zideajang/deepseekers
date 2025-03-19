@@ -126,11 +126,9 @@ def search_baggage(baggage_number:str):
 event_manager = EventManager()
 def on_message(message:BaseMessage):
     console.print(Panel(message.content,title="user"))
-    
-
-
 def on_response(message:BaseMessage):
     console.print(Panel(message.content,title="Assistant"))
+    
 event_manager.register_observer(EventType.OnMessage,on_message)
 event_manager.register_observer(EventType.OnResponse,on_response)
 
