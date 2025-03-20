@@ -1,6 +1,8 @@
 from abc import ABC
 import inspect
 from typing import Protocol
+import pickle
+import time
 
 from typing import Dict,Any,Union,Optional,List,Callable
 from functools import wraps
@@ -72,7 +74,8 @@ class Agent[D,T](ABC):
                  handoff_description:Optional[str|Callable[...,str]] = None,
                  lifecylce:Optional[AgentLifeCycleInterface] = None,
                  span:Optional[Any] = None,
-                 verbose:bool = True
+                 verbose:bool = True,
+                 is_debug=False
                 ):
         
         """
@@ -96,6 +99,7 @@ Args:
         self.ResultType:type = DeepseekResult
 
         self.verbose = verbose
+        self.is_debug = is_debug
         self.model_name = model_name
         
         self.deps = None
@@ -359,8 +363,16 @@ Args:
         @chat
         def result()->RecursionError:
             try:
-                response = self.client.chat(self.model_config)
-                # print(response)
+                if self.is_debug:
+                    with open(f'{self.name}.pkl', 'rb') as file:
+                        response = pickle.load(file)
+                else:
+                    # pass
+                    response = self.client.chat(self.model_config)
+                    timestamp = time.time()
+                    with open(f'{self.name}_{timestamp}.pkl', 'wb') as file:
+                        pickle.dump(response,file)
+                
                 return ResponseOrError.from_response(response)
             except Exception as e:
                 return ResponseOrError.from_error(e)

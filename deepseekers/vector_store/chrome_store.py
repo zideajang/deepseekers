@@ -1,7 +1,6 @@
 import chromadb
 from  typing import List,Union
-from tinychain.text_splitters import Doc
-
+from deepseekers.text_splitter import Doc
 from chromadb.utils.embedding_functions.ollama_embedding_function import (
     OllamaEmbeddingFunction,
 )

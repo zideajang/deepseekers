@@ -19,26 +19,24 @@ class EventType(StrEnum):
     OnEndRunAgent = "on_end_run_agent"
     OnStartToolCall = "on_start_tool_call"
     OnEndToolCall = "on_end_tool_call"
+    OnError = "on_error"
     OnFinished = "on_finished"
-
 
 
 class EventManager[T](ABC):
 
     def __init__(self):
-        self.observables: Dict[EventType, List[Callable]] = {
-            event_type: [] for event_type in EventType
+        self.observables: Dict[T, List[Callable]] = {
+            event_type: [] for event_type in T
         }
-    
-    def register_observer(self, event_type: EventType, observer: Callable):
-        self.observables[event_type].append(observer)
+    @abstractmethod
+    def register_observer(self, event_type: T, observer: Callable):
+        raise NotImplementedError()
+    @abstractmethod
+    def trigger_event(self, event_type: T, *args, **kwargs):
+        raise NotImplementedError()
+        
 
-    def trigger_event(self, event_type: EventType, *args, **kwargs):
-        for observer in self.observables[event_type]:
-            try:
-                observer(*args, **kwargs)
-            except Exception as e:
-                print(f"Error executing observer for {event_type}: {e}")
 
 class Span:
     def __init__(self, 
