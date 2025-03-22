@@ -194,6 +194,16 @@ Args:
     # def system_message(self):
     #     return self.messages[0] if self.messages[0] and isinstance(self.messages[0],SystemMessage) else None
 
+    def bind_provider(self,provider:Any):
+        all_attributes = dir(provider)
+        
+        filtered_attributes = [attr for attr in all_attributes if not (attr.startswith('__') and attr.endswith('__'))]
+        methods = [attr for attr in filtered_attributes if callable(getattr(provider, attr))]
+        
+        for method_name in methods:
+            method = getattr(provider, method_name)
+            self.available_tools[method_name] = method
+
     def bind_tools(self,tools):
         # TODO 需要进行校验
         for tool in tools:
@@ -260,7 +270,7 @@ Args:
         self.messages = []
         self._update_system_message(prompt)
 
-    def _update_system_message(self,prompt:Union[str|BaseMessage]):
+    def _update_system_message(self,prompt:str|BaseMessage):
         if isinstance(prompt,str):
             self.system_message = SystemMessage(content=prompt)
         elif isinstance(prompt,BaseMessage):
@@ -272,6 +282,10 @@ Args:
             self.messages[0] = self.system_message
         else:
             self.messages.append(self.system_message)
+
+        if self.result_type:
+            res = _json_schema_to_example(result_type=self.result_type)
+            self.messages[0].content = self.messages[0].content + res
 
     # TODO python 成员函数对泛型的支持
     def add_message(self,message:Union[Dict,BaseMessage]):

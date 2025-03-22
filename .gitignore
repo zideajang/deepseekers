@@ -175,3 +175,6 @@ data
 *.pkl
 chroma_db
 *.pickle
+
+images
+examples

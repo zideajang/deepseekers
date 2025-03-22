@@ -65,7 +65,9 @@ class DeepseekResult[T](Result):
             try:
                 if not self.response.choices:
                     raise ValueError("No choices in response")
+                print(self.response.choices[0].message.content)
                 data = json.loads(self.response.choices[0].message.content)
+                print(data)
                 return self.result_type(**data)
             except (json.JSONDecodeError, TypeError, ValueError) as e:
                 print(f"Error getting data: {e}")

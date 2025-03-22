@@ -2,9 +2,11 @@ import os
 import pickle
 from abc import ABC,abstractmethod
 from pathlib import Path
-from typing import Dict,Any,Union,List,Callable
+from typing import Dict,Any,Union,List,Callable,Optional
 from contextlib import contextmanager
 from functools import wraps
+
+from deepseekers.core import Agent
 from deepseekers.core.utils import is_snake_case
 from pydantic import BaseModel,Field
 
@@ -22,18 +24,23 @@ class Project(ABC):
     def __init__(self,
                  name:str,
                  description:Union[str,Callable[...,str]],
-                 workspace_dir:Union[str,Path] = None,
+                 workspace_dir:str|Path,
+                 pm:Agent|None = None,
+                 temp_dir:str|Path|None = None,
                  is_cache:bool = False,
                  tools: Union[List[Union[str,Callable]]|None]=None):
         
         self.name = name
         self.description = description
+        self.pm = pm
         self.is_cache = is_cache
         self.workspace_dir = workspace_dir
+        self.temp_dir = temp_dir or f"{workspace_dir}/temp"
 
         self._context = {
             'name':name,
-            'description':description
+            'description':description,
+            'pm':pm
         }
 
         if self.is_cache:
@@ -46,7 +53,6 @@ class Project(ABC):
                 self.load_project(self.cache_file_path)
             else:
                 raise ValueError(f"请指定 workspace_dir")
-                
 
         
         self.tools = tools or []
@@ -77,7 +83,7 @@ class Project(ABC):
 
                     return self._context[func.__name__]
                 
-                result = func(*args, **all_kwargs)
+                result = func(self,*args, **all_kwargs)
                 self._context[func.__name__] = result
                 if self.is_cache:
                     with open(self.cache_file_path, 'wb') as file:

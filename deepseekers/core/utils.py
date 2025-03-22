@@ -15,11 +15,19 @@ from rich.markdown import Markdown
 console = Console()
 
 def _json_schema_to_example( result_type:type,is_flag:bool=True):
+    # TODO 待优化
+    schema = result_type.schema()
     if not hasattr(result_type,'model_json_schema'):
         raise TypeError("现在仅支持继承 BaseModel 的类")
     if is_flag:
-        res = """
-    EXAMPLE JSON OUTPUT"""
+        res = ""
+        for field_name, field_info in schema["properties"].items():
+            res += f"""
+字段名称：{field_name}, 描述：{field_info.get('description')}
+"""
+        res += """
+EXAMPLE JSON OUTPUT\n"""
+
     else:
         res = ""
     json_schema = result_type.model_json_schema()

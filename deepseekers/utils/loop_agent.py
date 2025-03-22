@@ -11,6 +11,31 @@ console = Console()
 
 from deepseekers.context_manager import Span,RunContext,EventManager,EventType
 
+def run_conversion(chat_handle,
+                   quit_handle,
+                   exit_message:str = "是否要推出对话"):
+    while True:
+        user_input = questionary.text(
+            "你:",
+            multiline=False,
+            qmark=">",
+        ).ask()
+
+        if user_input.startswith("/"):
+            if user_input.lower() == "/exit":
+                res = questionary.confirm(exit_message).ask()
+                if(res):
+                    quit_handle()
+                    break
+                else:
+                    continue
+        else:
+            if user_input == "":
+                console.print("📢 请输入")
+                continue
+            user_message = HumanMessage(content=user_input)
+            if not user_message is None:
+                chat_handle(user_message)
 
 def run_agent_loop(
         agent:Agent,
