@@ -12,6 +12,7 @@ class Result[T](ABC):
     def __init__(self,response):
         self.response = response
         self.result_message = "空消息"
+        self.messages = []
 
     @abstractmethod
     def get_message(self)->BaseMessage:

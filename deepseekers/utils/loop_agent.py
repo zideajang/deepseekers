@@ -1,6 +1,8 @@
-from typing import Dict,Callable,Generic,List,Any,Optional
 import json
+from typing import Dict,Callable,Generic,List,Any,Optional
 
+import questionary
+from prompt_toolkit.styles import Style
 
 import questionary
 from rich.console import Console
@@ -98,3 +100,23 @@ def run_agent_loop(
 
                 if agent_span:
                     agent_span.stop()
+
+
+def select_action(options):
+    custom_style = Style.from_dict({
+        'answer': '#ff9d00 bold',
+        'question': '',
+        'instruction': '',
+        'pointer': '#673ab7 bold',
+        'highlighted': '#ff9d00 bold',
+        'selected': '#cc5454',
+        'separator': '#cc5454',
+        'choices': '#0abf5b',
+        'exit': '#ff0000 bold',  # Define a style for 'exit'
+    })
+    selected_action = questionary.select(
+        "选择接下来要进行的动作",
+        choices=options,
+        style=custom_style
+    ).ask()
+    return selected_action

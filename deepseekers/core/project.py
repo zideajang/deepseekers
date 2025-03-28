@@ -28,6 +28,7 @@ class Project(ABC):
                  pm:Agent|None = None,
                  temp_dir:str|Path|None = None,
                  is_cache:bool = False,
+                 context:Optional[Dict[str,Any]] = None,
                  tools: Union[List[Union[str,Callable]]|None]=None):
         
         self.name = name
@@ -37,11 +38,16 @@ class Project(ABC):
         self.workspace_dir = workspace_dir
         self.temp_dir = temp_dir or f"{workspace_dir}/temp"
 
-        self._context = {
+        default_context = {
             'name':name,
             'description':description,
             'pm':pm
         }
+
+        if context:
+            context.update(default_context)
+
+        self._context = context or default_context
 
         if self.is_cache:
             if self.workspace_dir:
@@ -61,6 +67,20 @@ class Project(ABC):
     def context(self):
         # TODO
         return self._context
+    
+    def update_context(self, name, value):
+        if name in self._context:
+            if isinstance(self._context[name], list):
+                if isinstance(value, list):
+                    self._context[name].extend(value) # 使用extend将value中的元素追加到原list
+                else:
+                    self._context[name].append(value)
+            elif isinstance(self._context[name], dict) and isinstance(value, dict):
+                self._context[name].update(value)
+            else:
+                self._context[name] = value
+        else:
+            self._context[name] = value
 
     def load_project(self,file_path):
         if os.path.exists(file_path):

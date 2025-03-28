@@ -55,8 +55,17 @@ class AgentDep:
 
 ContextType = Optional[Union[Dict[str,Any],Callable[...,Dict[str,Any]],ContextManager]]
 
+# TODO 以后这个要配置设置
 __CTX_VARS_NAME__ = "context"
+DEFAULT_CACHE_DIR = "./examples/page_generation/cache"
 
+class BaseAgent(Protocol):
+    def run(self,
+            query:Union[str,HumanMessage],
+            # TODO 有待考量具体设计
+            deps:Dict[str,Any]=None)->Result:
+        ...
+        
 class Agent[D,T](ABC):
     def __init__(self,
                  name:str,
@@ -75,6 +84,7 @@ class Agent[D,T](ABC):
                  lifecylce:Optional[AgentLifeCycleInterface] = None,
                  span:Optional[Any] = None,
                  verbose:bool = True,
+                 cache_dir:str = DEFAULT_CACHE_DIR,
                  is_debug=False
                 ):
         
@@ -101,6 +111,7 @@ Args:
         self.verbose = verbose
         self.is_debug = is_debug
         self.model_name = model_name
+        self.cache_dir = cache_dir
         
         self.deps = None
         self.deps_type = deps_type
@@ -378,14 +389,16 @@ Args:
         def result()->RecursionError:
             try:
                 if self.is_debug:
-                    with open(f'{self.name}.pkl', 'rb') as file:
-                        response = pickle.load(file)
+                    with open(f'{self.cache_dir}/{self.name}.pkl', 'rb') as file:
+                        cache_data = pickle.load(file)
+                        response = cache_data['response']
                 else:
                     # pass
                     response = self.client.chat(self.model_config)
-                    timestamp = time.time()
-                    with open(f'{self.name}_{timestamp}.pkl', 'wb') as file:
-                        pickle.dump(response,file)
+                    
+                    timestamp = time.strftime("%Y%m%d_%H%M%S")
+                    with open(f'{self.cache_dir}/{self.name}_{timestamp}.pkl', 'wb') as file:
+                        pickle.dump({"messages":self.messages,"response":response},file)
                 
                 return ResponseOrError.from_response(response)
             except Exception as e:

@@ -13,9 +13,12 @@ class MessageRole(StrEnum):
     Vidoe = 'video'
     Audio = 'audio'
     Code = 'code'
+    CodeResult = 'code_result'
     Memory = 'memory'
+    File = 'file'
 
     Thinking = "thinking"
+    Error = "error"
 
 class CodeLanguage(StrEnum):
     Python = 'pyhton'
@@ -73,4 +76,15 @@ class CodeMessage(BaseMessage):
     # 这里 content 是代码 
     role:MessageRole  = MessageRole.Code
     lang:str = Field(description="The language of the code.")
+    
+class FileMessage(BaseMessage):
+    role:MessageRole | str = 'file'
+    
+class ErrorMessage(BaseMessage):
+    role:MessageRole | str = 'error'
+
+class CodeResultMessage(BaseMessage):
+    role:MessageRole | str = 'code_result'
+    file_path:str 
+    
     
