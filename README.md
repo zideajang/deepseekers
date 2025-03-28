@@ -22,11 +22,13 @@
 - 他是变化的，不过引入新的特征，以便于适应当先 LLM 快速的迭代
 - 最小集，希望在不断跟随 LLM 过程让版本切换成本达到最小
 
-## 相关教程
-![哔哩哔哩相关视频](images/bilibili_screenshot.jpg)
+## 示例
 
-## example
+
 ## 😀 hello 第一行代码
+### 准备
+- 首先需要在 deepseek 官网申请 api_key 作为 DEEPSEEK_API_KEY 即可
+
 ### 初始化 client 🎉
 一切从 Hello world 开始，你的 deepseeker ✈️ 之旅也是从 Hello 例子开始。首先初始化一个 client ，client 对应一个 LLM 供应商，或者对应本地起的 LLM 服务，例如 ollama。个人这里并不推荐使用。
 
