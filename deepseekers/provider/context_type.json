@@ -1,0 +1,307 @@
+{
+    "ContextType": {
+        "type": "string",
+        "enum": [
+            "text",
+            "document",
+            "database_record",
+            "image",
+            "audio",
+            "video",
+            "location",
+            "user_profile",
+            "product_info",
+            "external_api_result"
+        ],
+        "description": "枚举类型，定义了不同上下文信息的类型。"
+    },
+    "definitions": {
+        "TextContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "text"
+                    ],
+                    "description": "上下文类型为文本。"
+                },
+                "content": {
+                    "type": "string",
+                    "description": "文本内容。"
+                }
+            },
+            "required": [
+                "type",
+                "content"
+            ]
+        },
+        "DocumentContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "document"
+                    ],
+                    "description": "上下文类型为文档。"
+                },
+                "uri": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "文档的统一资源标识符。"
+                },
+                "metadata": {
+                    "type": "object",
+                    "description": "文档的元数据。",
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "description": "文档标题。"
+                        },
+                        "author": {
+                            "type": "string",
+                            "description": "文档作者。"
+                        },
+                        "creation_date": {
+                            "type": "string",
+                            "format": "date-time",
+                            "description": "文档创建日期和时间。"
+                        },
+                        "keywords": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "description": "文档关键词。"
+                        }
+                    },
+                    "required": [
+                        "title"
+                    ]
+                }
+            },
+            "required": [
+                "type",
+                "uri"
+            ]
+        },
+        "DatabaseRecordContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "database_record"
+                    ],
+                    "description": "上下文类型为数据库记录。"
+                },
+                "table": {
+                    "type": "string",
+                    "description": "数据库表名。"
+                },
+                "record_id": {
+                    "type": "string",
+                    "description": "记录的唯一标识符。"
+                }
+            },
+            "required": [
+                "type",
+                "table",
+                "record_id"
+            ]
+        },
+        "ImageContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "image"
+                    ],
+                    "description": "上下文类型为图片。"
+                },
+                "uri": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "图片的统一资源标识符。"
+                },
+                "alt_text": {
+                    "type": "string",
+                    "description": "图片的替代文本描述。"
+                }
+            },
+            "required": [
+                "type",
+                "uri"
+            ]
+        },
+        "AudioContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "audio"
+                    ],
+                    "description": "上下文类型为音频。"
+                },
+                "uri": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "音频的统一资源标识符。"
+                },
+                "transcript": {
+                    "type": "string",
+                    "description": "音频的文本转录。"
+                }
+            },
+            "required": [
+                "type",
+                "uri"
+            ]
+        },
+        "VideoContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "video"
+                    ],
+                    "description": "上下文类型为视频。"
+                },
+                "uri": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "视频的统一资源标识符。"
+                },
+                "captions": {
+                    "type": "string",
+                    "description": "视频的字幕。"
+                }
+            },
+            "required": [
+                "type",
+                "uri"
+            ]
+        },
+        "LocationContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "location"
+                    ],
+                    "description": "上下文类型为地理位置。"
+                },
+                "latitude": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "纬度。"
+                },
+                "longitude": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "经度。"
+                }
+            },
+            "required": [
+                "type",
+                "latitude",
+                "longitude"
+            ]
+        },
+        "UserProfileContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "user_profile"
+                    ],
+                    "description": "上下文类型为用户个人资料。"
+                },
+                "user_id": {
+                    "type": "string",
+                    "description": "用户唯一标识符。"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "用户姓名。"
+                },
+                "preferences": {
+                    "type": "object",
+                    "description": "用户偏好设置。"
+                }
+            },
+            "required": [
+                "type",
+                "user_id"
+            ]
+        },
+        "ProductInfoContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "product_info"
+                    ],
+                    "description": "上下文类型为产品信息。"
+                },
+                "product_id": {
+                    "type": "string",
+                    "description": "产品唯一标识符。"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "产品名称。"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "产品描述。"
+                },
+                "price": {
+                    "type": "number",
+                    "format": "float",
+                    "description": "产品价格。"
+                }
+            },
+            "required": [
+                "type",
+                "product_id"
+            ]
+        },
+        "ExternalApiResultContext": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "external_api_result"
+                    ],
+                    "description": "上下文类型为外部 API 调用结果。"
+                },
+                "api_name": {
+                    "type": "string",
+                    "description": "调用的 API 名称。"
+                },
+                "query_parameters": {
+                    "type": "object",
+                    "description": "API 请求的查询参数。"
+                },
+                "response": {
+                    "type": "object",
+                    "description": "API 响应内容。"
+                }
+            },
+            "required": [
+                "type",
+                "api_name",
+                "response"
+            ]
+        }
+    }
+}

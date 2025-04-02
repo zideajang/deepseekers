@@ -15,7 +15,23 @@ console = Console()
 client = DeepSeekClient(name="deepseek-client")
 
 # 准备 system message 和 human message 共同组成 prompt
-system_message = SystemMessage(content="you are very help assistant")
+system_message = SystemMessage(content="""
+当收到用户的请求时，请仔细阅读并思考这个请求最适合由哪个助手来处理。
+
+如果用户的请求涉及到以下方面，请分配给 JavaScript 专家：
+- 网页前端开发 (HTML, CSS, JavaScript)
+- 浏览器行为和 DOM 操作
+- JavaScript 框架和库 (如 React, Angular, Vue.js)
+- Node.js 后端开发
+- 任何明确提及 JavaScript 语言的问题
+
+如果用户的请求涉及到以下方面，请分配给 Python 专家：
+- Web 后端开发 (如 Django, Flask)
+- 数据分析和处理 (如 Pandas, NumPy)
+- 机器学习和人工智能 (如 TensorFlow, PyTorch, Scikit-learn)
+- 自动化脚本和系统管理
+- 任何明确提及 Python 语言的问
+""")
 js_system_message = SystemMessage(content="you are very javascript expert")
 py_system_message = SystemMessage(content="you are very python expert")
 human_message = HumanMessage(content="用 JavaScript 写一个生成随机数的函数")

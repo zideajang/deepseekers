@@ -1,11 +1,15 @@
+import types
 import json
 from abc import ABC,abstractmethod
+from pydantic import BaseModel
 from typing import TypeVar,Any,List,Dict,Union
 from deepseekers.core.message import BaseMessage,AIMessage,ToolMessage
 
 # ResultDataT = TypeVar(
 #     "ResultDataT", default=str, covariant=True
 # )
+
+
 
 class Result[T](ABC):
 
@@ -27,14 +31,15 @@ class Result[T](ABC):
         raise NotImplementedError()
 
 
+
 class DeepseekResult[T](Result):
     def __init__(self, 
                  response:Any,
                 messages:List[BaseMessage],
-                 result_type=None):
+                 result_data_type=None):
         self.messages =  messages or []
         self.response = response
-        self.result_type = result_type
+        self.result_data_type = result_data_type
 
         # print(self.response)
 
@@ -42,14 +47,14 @@ class DeepseekResult[T](Result):
             self.result_message =  AIMessage(content=self.response.choices[0].message.content)
 
         elif self.response.choices[0].message.tool_calls:
-            tool_call = self.response.choices[0].message.tool_calls[0]
-            self.result_message = ToolMessage(tool_call=tool_call,
-                        tool_id=tool_call.id,
-                        tool_arguments=tool_call.function.arguments,
-                        tool_name=tool_call.function.name,
-                        content="")
+            for tool_call in self.response.choices[0].message.tool_calls:
+                self.result_message = ToolMessage(tool_call=tool_call,
+                            tool_id=tool_call.id,
+                            tool_arguments=tool_call.function.arguments,
+                            tool_name=tool_call.function.name,
+                            content="")
 
-        self.messages.append(self.result_message)
+                self.messages.append(self.result_message)
 
     @property
     def all_messages(self):
@@ -62,14 +67,20 @@ class DeepseekResult[T](Result):
         return str(self.response.choices[0].message.content)
 
     def get_data(self)->T:
-        if self.result_type:
+
+        if isinstance(self.result_data_type, types.GenericAlias):
+            origin = self.result_data_type.__origin__
+            args = self.result_data_type.__args__
+            if origin is list and args:
+                result_data_type = args[0]
+            data = json.loads(self.response.choices[0].message.content)
+            return [result_data_type(**item) for item in data['items']]
+        elif self.result_data_type:
             try:
                 if not self.response.choices:
                     raise ValueError("No choices in response")
-                print(self.response.choices[0].message.content)
                 data = json.loads(self.response.choices[0].message.content)
-                print(data)
-                return self.result_type(**data)
+                return self.result_data_type(**data)
             except (json.JSONDecodeError, TypeError, ValueError) as e:
                 print(f"Error getting data: {e}")
                 return None 

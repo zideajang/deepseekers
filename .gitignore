@@ -178,3 +178,9 @@ chroma_db
 
 images
 examples
+reference
+public
+.chainlit
+.file
+build
+demos

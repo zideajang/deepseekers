@@ -1,6 +1,6 @@
 from deepseekers.core import Agent
 from deepseekers.core import Result,DeepseekResult
-
+from deepseekers.core.context_manager import ContextManager
 
 class HumanFeedBackResult(Result):
     def get_data(self):
@@ -13,9 +13,5 @@ class HumanFeedBackResult(Result):
         return super().get_text()
 
 class UserProxyAgent(Agent):
-    def run(self, query, deps = None)->Result:
-        
-        
-        DeepseekResult(response=)
-
-        return 
+    def run(self, query, run_context = None):
+        return super().run(query, run_context)

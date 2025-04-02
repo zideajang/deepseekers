@@ -1,10 +1,8 @@
 
 
 from rich.console import Console
-from rich.markdown import Markdown
-from typing import List
-from pydantic import BaseModel,Field
 from rich.panel import Panel
+from pydantic import BaseModel,Field
 from deepseekers.core import DeepSeekClient,Agent
 from deepseekers.core.message import HumanMessage,SystemMessage
 from deepseekers.core.utils import _json_schema_to_example
@@ -15,10 +13,6 @@ class Pizza(BaseModel):
     name:str = Field(title="name of pizza",description="披萨的名称",examples=["海鲜披萨"])
     description:str = Field(title="description of pizza",description="对于披萨的简单介绍",examples=["丰富的海鲜如虾、鱿鱼和贻贝搭配番茄酱和奶酪，海洋的味道在口中爆发。"])
 
-class PizzaList(BaseModel):
-    pizza_list:List[Pizza] = Field(title="pizza list",description="给出一个披萨列表",examples=[f"""
-{_json_schema_to_example(Pizza)}
-"""])
 
 # 初始化一个 client
 client = DeepSeekClient(name="deepseek-client")
@@ -32,11 +26,11 @@ agent = Agent(
     model_name="deepseek-chat",
     system_message=system_message,
     client=client,
-    context={},
-    result_type=PizzaList
+    result_type=list[Pizza]
     )
 
 result = agent.run(human_message)
-for pizza in result.get_data().pizza_list:
+print(result.get_data())
+for pizza in result.get_data():
     console.print(Panel(pizza.description,title=f"🍕 {pizza.name}"))
     

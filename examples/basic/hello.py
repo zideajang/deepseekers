@@ -1,3 +1,5 @@
+import asyncio
+
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -11,15 +13,15 @@ client = DeepSeekClient(name="deepseek-client")
 system_message = SystemMessage(content="you are very help assistant")
 human_message = HumanMessage(content="write hello world in python")
 
-# console.print(human_message.model_dump())
 
 agent = Agent(
-    name="deepseeker_001",
-    model_name="deepseek-chat",
+    name="simple_agent",
     system_message=system_message,
-    client=client,
-    context={}
     )
 
-result = agent.run(human_message)
-console.print(Markdown(result.get_text()))
+async def main():
+    result = await agent.run(human_message)
+    if result:
+        console.print(result.get_text())
+if __name__ == "__main__":
+    asyncio.run(main=main())
