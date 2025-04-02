@@ -1,4 +1,4 @@
-# deepseekers(标准版)
+# 🚀 deepseekers(标准版)
 
 ## deepseekers 是个啥
 轻量级多 Agent 协作的 AI Agent 框架(标准版)
@@ -43,7 +43,6 @@ client =  DeepSeekClient(
 需要准备一个 api_key deepseek 关注注册一个账号，因为是需要 api_key 
 
 
-
 ### 📝 准备系统消息(SystemMessage)和用户消息(HumanMessage)
 ```python
 system_message = SystemMessage(content="you are very help assistant")
@@ -52,50 +51,29 @@ human_message = HumanMessage(content="write hello world in python")
 这里 system_message 设计比较灵活，可以通过多种方式创建 system_message，在后面例子大家就能看到更多方式来定义 system_message
 
 ### 定义一个 🤖 Agent
+```python
+agent = Agent(
+    name="simple_agent",
+    system_message=system_message,
+    )
+```
+简简单单的配置就可以完成 Agent 初始化。在 Agent 设计时，借鉴了很多框架中 Agent 模样，具体 Agent 应该长什么样呢? 最后的设计是想让开发人员只要较少的参数。就可以创建出来一个 Agent，而且还能够满足 Agent 基本能力。所以这是现在大家看到 Agent 模样，一些基本的参数就可以创建出一个 Agent。
+
+一切准备好了，就可以开始运行 Agent 了，这里要补充一点，在 deepseekers 框架设计中，一切都是优先考虑支持异步调用，为什么这样做，原因也是不必多说了。
+
 
 ```python
-from rich.console import Console
-from rich.markdown import Markdown
-
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-console = Console()
-
-# 初始化一个 client
-client = DeepSeekClient(name="deepseek-client")
-
-system_message = SystemMessage(content="you are very help assistant")
-human_message = HumanMessage(content="write hello world in python")
-
-
 async def main():
     result = await agent.run(human_message)
     if result:
-        console.print(Markdown(result.get_text()))
+        console.print(result.get_text())
 if __name__ == "__main__":
     asyncio.run(main=main())
 ```
-在 Agent 设计时，借鉴了很多框架中 Agent 模样，具体 Agent 应该长什么样呢? 最后的设计是想让开发人员只要较少的参数。就可以创建出来一个 Agent，而且还能够满足 Agent 基本能力。所以这是现在大家看到 Agent 模样，一些基本的参数就可以创建出一个 Agent。
-
-文件位置
-`\examples\basic\hello.py`
-
+完整代码如下
 ```python
-from rich.console import Console
-from rich.markdown import Markdown
+import asyncio
 
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-console = Console()
-
-# 初始化一个 client
-client = DeepSeekClient(name="deepseek-client")
-
-# 准备系统消息(SystemMessage)和用户消息(HumanMessage)
-system_message = SystemMessage(content="you are very help assistant")
-human_message = HumanMessage(content="write hello world in python")
-
-# 初始化一个 🤖 Agent
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -115,9 +93,24 @@ agent = Agent(
     system_message=system_message,
     )
 
-result = agent.run(human_message)
-console.print(result.get_text())
+async def main():
+    result = await agent.run(human_message)
+    if result:
+        console.print(result.get_text())
+if __name__ == "__main__":
+    asyncio.run(main=main())
 ```
+
+当然通常也支持同步方式来运行 Agent，具体方法如下
+
+```python
+
+if __name__ == "__main__":
+    result = agent.sync_run(human_message)
+    if result:
+        console.print(result.get_text())
+```
+
 
 ### demo 2 满足结构化输出，生成 🍕 数据
 
@@ -134,7 +127,20 @@ console.print(result.get_text())
 结构化输出，轻松接入到现有系统，我觉得结构化输出和工具调用是现代 LLM 必备的两种技能，如果还没有这 2 个技能就很难混了。接下来就通过生成 🍕 数据为演示通过 Agent 让你可以省力让 deepseek 给出结构化输出，和上一个例子重复就不再重复了。
 
 
-首先是定义数据结构，这是一个嵌套数据结构，Pizza 🍕 和一个 Pizza 🍕🍕🍕列表的数据
+首先是定义数据结构，这是一个嵌套数据结构，Pizza 🍕 和一个 Pizza 🍕🍕🍕列表的数据。
+
+📢 **提示**: 结构化输出这里在 `v2` 版本也做一定的优化，就是返回类型集合情况，不再需要定义该类型集合类来接受输出结构，可以通过 `list[Pizza]` 来告诉 Agent 返回的类型为 `Pizza` 的集合类型。
+
+🚨 **注意**: 这里指定返回结构化的数据类型修改为 用 `result_data_type` 来指定，而不再是 `result_type` 。这里 `result_type` 具有新的含义，表示 `agent.run` 或者 `agent.sync_run` 返回结构类型。所以进行这样修改就是为了可以通过参数名字可以准确表达参数用途。
+
+例如
+```python
+class PizzaList(BaseModel):
+    pizza_list:List[Pizza] = Field(title="pizza list",description="给出一个披萨列表",examples=[f"""
+{_json_schema_to_example(Pizza)}
+"""])
+```
+例如无需再去指定 `PizzaList` 作为 `Pizza` 集合类的类型，直接指定 `list[Pizza]` 即可
 
 ```python
 class Pizza(BaseModel):
@@ -146,7 +152,7 @@ class PizzaList(BaseModel):
 {_json_schema_to_example(Pizza)}
 """])
 ```
-**注意**: 📢 暂时只支持 pydantic 的 BaseModel 类型的数据
+**提示**: 📢 暂时只支持 pydantic 的 BaseModel 类型的数据，如果又其他类型，可以将其转换为 pydantic 类型
 
 ```python
 
@@ -166,13 +172,7 @@ class Pizza(BaseModel):
     name:str = Field(title="name of pizza",description="披萨的名称",examples=["海鲜披萨"])
     description:str = Field(title="description of pizza",description="对于披萨的简单介绍",examples=["丰富的海鲜如虾、鱿鱼和贻贝搭配番茄酱和奶酪，海洋的味道在口中爆发。"])
 
-class PizzaList(BaseModel):
-    pizza_list:List[Pizza] = Field(title="pizza list",description="给出一个披萨列表",examples=[f"""
-{_json_schema_to_example(Pizza)}
-"""])
 
-# 初始化一个 client
-client = DeepSeekClient(name="deepseek-client")
 
 system_message = SystemMessage(content="you are very help assistant")
 human_message = HumanMessage(content="生成 10 种以上披萨")
@@ -182,14 +182,17 @@ agent = Agent(
     name="pizza_generator",
     model_name="deepseek-chat",
     system_message=system_message,
-    client=client,
     # 📢  需要在初始化 Agent 时候指定一些输出数据结构
-    result_type=PizzaList
+    result_type=list[Pizza]
     )
 
-result = agent.run(human_message)
-for pizza in result.get_data().pizza_list:
-    console.print(Panel(pizza.description,title=f"🍕 {pizza.name}"))
+async def main():
+    result = await agent.run(human_message)
+    for pizza in result.get_data():
+        console.print(Panel(pizza.description,title=f"🍕 {pizza.name}"))
+    
+if __name__ == "__main__":
+    asyncio.run(main=main())
     
 ```
 

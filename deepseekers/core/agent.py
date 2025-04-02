@@ -209,7 +209,7 @@ class Agent[D,T:Result](ABC):
         if tools:
             self.config["tools"] = tools
 
-        if "tools" in run_context.config:
+        if run_context and hasattr(run_context,"config") and "tools" in run_context.config:
             if 'tools' not in self.config:
                 self.config["tools"] = run_context.config['tools']
             else:
