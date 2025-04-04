@@ -4,11 +4,11 @@
 # 条件替换
 # 保存文件
 
-from deepseekers.core import Project,Agent
-from deepseekers.core.project import get_project
-from deepseekers.client import OllamaClient
-from deepseekers.result import OllamaResult
-from deepseekers.core.message import ToolMessage
+from azent.core import Project,Agent
+from azent.core.project import get_project
+from azent.client import OllamaClient
+from azent.result import OllamaResult
+from azent.core.message import ToolMessage
 
 
 def read_file(file_path: str) -> str:

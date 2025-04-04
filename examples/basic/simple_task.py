@@ -4,12 +4,12 @@ from typing import Protocol
 from rich.console import Console
 from rich.markdown import Markdown
 
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.agent import AgentLifeCycle,AgentLifeCycleInterface
-from deepseekers.core.context_manager import DefaultContextManager
-from deepseekers.core.message import HumanMessage,SystemMessage,ToolMessage
-from deepseekers.core.task import create_task,TaskInterface
-from deepseekers.core.utils import _json_schema_to_example,print_config,function_to_json
+from azent.core import DeepSeekClient,Agent
+from azent.core.agent import AgentLifeCycle,AgentLifeCycleInterface
+from azent.core.context_manager import DefaultContextManager
+from azent.core.message import HumanMessage,SystemMessage,ToolMessage
+from azent.core.task import create_task,TaskInterface
+from azent.core.utils import _json_schema_to_example,print_config,function_to_json
 
 console = Console()
 

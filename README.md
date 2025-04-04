@@ -1,9 +1,9 @@
-# 🚀 deepseekers(标准版)
+# 🚀 aZent(标准版)
 
-## deepseekers 是个啥
+## aZent 是个啥
 轻量级多 Agent 协作的 AI Agent 框架(标准版)
 
-## deepseekers 的目标人群是谁
+## aZent 的目标人群是谁
 
 会专注于几个适合引入 AI 的领域、例如翻译协作、数据分析、辅助开发。专注几个领域深挖，收集问题形成针对这些领域的解决方案。通过Agent增强LLM稳定性、可控性，从而提升 Agent 价值。
 
@@ -59,7 +59,7 @@ agent = Agent(
 ```
 简简单单的配置就可以完成 Agent 初始化。在 Agent 设计时，借鉴了很多框架中 Agent 模样，具体 Agent 应该长什么样呢? 最后的设计是想让开发人员只要较少的参数。就可以创建出来一个 Agent，而且还能够满足 Agent 基本能力。所以这是现在大家看到 Agent 模样，一些基本的参数就可以创建出一个 Agent。
 
-一切准备好了，就可以开始运行 Agent 了，这里要补充一点，在 deepseekers 框架设计中，一切都是优先考虑支持异步调用，为什么这样做，原因也是不必多说了。
+一切准备好了，就可以开始运行 Agent 了，这里要补充一点，在 azent 框架设计中，一切都是优先考虑支持异步调用，为什么这样做，原因也是不必多说了。
 
 
 ```python
@@ -77,8 +77,8 @@ import asyncio
 from rich.console import Console
 from rich.markdown import Markdown
 
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
 console = Console()
 
 # 初始化一个 client
@@ -161,9 +161,9 @@ from rich.markdown import Markdown
 from typing import List
 from pydantic import BaseModel,Field
 from rich.panel import Panel
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.core.utils import _json_schema_to_example
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
+from azent.core.utils import _json_schema_to_example
 
 console = Console()
 # 定义数据数据结构，现在仅支持 BaseModel 类型
@@ -206,90 +206,323 @@ if __name__ == "__main__":
 
 这种方案利用了 Agent 框架（如 LangChain、AutoGen 等）中具备更强逻辑和工具调用能力的 Agent，来分析 LLM 的原始输出，并根据预定义的结构提取所需的信息。
 
-### 通过 deps 来首先动态获取资源
+## 😀 关于 deps 示例
 
-有时候会有这样的场景，我们需要发起请求时候获取一些资源作为 LLM 请求时候的背景知识。这时候需要依赖，这种依赖可能是网络资源、数据库资源和文件系统。
+有时候会有这样的场景，通常需要获取外部资源，这里外部可以是通过 http 请求获取资源，或者我们连接数据库来获取资源，也能读取本地文件。将这些资源整合到 context，例如我们需要阅读邮件，需要通过邮件接口来获取邮件内容。
+
+这些资源都是外部，而且动态的，都是实时获取资源。所以启动 Agent 之前需要去连接资源，接通资源。这就是 deps 设计的目的。
+
 
 
 ### 定义依赖数据结构
 ```python
 @dataclass
-class MyDeps:  
-    http_client: httpx.Client
-    url:str = "http://127.0.0.1:8000/pizzas"
+class Deps:
+    conn:httpx.AsyncClient
+    url:str
 ```
+- 定义 Deps 数据用于连接服务API的客户端
+- url 
+
+
+```python
+async def system_message(context):
+    conn = context['deps'].conn
+    try:
+        response = await conn.get(context['deps'].url)
+        response.raise_for_status()
+        if response.status_code == 200:
+            pokemon_list = [ Pokemon(name=item['name'],description="") for item in response.json()['results']]
+            return f"""
+        基于 **Pokemon** 出现的 Pokemon 给与简单说明，就一句话
+        ** Pokemon **
+        {",".join([ pokemon.name for pokemon in pokemon_list])}
+
+        """
+        else:
+            return f"请求失败，状态码:{response.status_code}"
+    except httpx.RequestError as exc:
+        return f"{exc.request.url!r} 请求时出现错误"
+    except httpx.HTTPStatusError as exc:
+        return f"当发起 {exc.request.url!r} 请求，返回的状态码为 {exc.response.status_code} "
+```
+
+- 在 `system_prompt` 函数通过 `run_context` 来获取到 Deps 也就是拿到连接服务的客户端
+- `system_prompt` 通过客户端发起请求拿到数据作为 context 一部分
+
 
 然后将 system message 用一个函数包裹起来，函数形成欢迎，因为只有函数在执行才会确定，不然函数通过参数传入一些不确定因素，这个 Deps 只要运行 Agent 时候，执行 system_message 才会在运行获取数据。
 
+
 ```python
-def system_message(deps:MyDeps)->SystemMessage:
-    response = deps.http_client.get(deps.url)
-    if response.status_code == 200:
-        pizza_list = response.json()
-        return SystemMessage(content=f"""
-Pizzas
-{json.dumps(pizza_list)}
-""")
-    else:
-        console.print_exception(f"请求失败，状态码：{response.status_code}")
-        console.print(response.text)
-        return SystemMessage(content="")
+agent = Agent(
+    name="deps",
+    result_data_type=list[Pokemon]
+    )
 ```
 
 ```python
-result = agent.run(human_message,{'deps':deps})
+async def main():
+    async with httpx.AsyncClient() as client:
+        dep = Deps(conn=client,url="https://pokeapi.co/api/v2/pokemon?limit=5")
+        
+        result = await agent.run("给出每一个 pokemon 的解释说明",run_context=RunContext(deps=dep))
+        print(result.get_data())
+
+if __name__ == "__main__":
+    asyncio.run(main=main())
 ```
+- 获取一个客户端(client)
+- 初始依赖 Deps 在类中持有客户端的连接以及url
+- 在 system_prompt 函数通过 run_context 来获取到 Deps 也就是拿到连接服务的客户端
+- system_prompt 通过客户端发起请求拿到数据作为 context 一部分
+
 
 ```python
-import json
-from typing import List,Union
+import asyncio
 import httpx
+from typing import Optional
 from dataclasses import dataclass
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.core.utils import _json_schema_to_example
-
 from pydantic import BaseModel,Field
-from rich.console import Console
-console = Console()
 
+from azent.core import DeepSeekClient,Agent
+from azent.core.run_context import RunContext
+
+url = "https://pokeapi.co/api/v2/pokemon?limit=10"
+
+client = DeepSeekClient(name="deepseek-client")
+
+class Pokemon(BaseModel):
+    name:str = Field(title="pokemon name",examples=['Charizard'])
+    description:Optional[str] = Field(title="description of pokemon",description="",examples=["是《宝可梦》系列中的火系飞行系双属性宝可梦，外形像橙色巨龙，喷火能力强，是初代御三家小火龙的最终进化形态。"],default="")
+
+# 依赖数据结构，通常是获取数据的前提，也就是连接网络和连接数据库
 @dataclass
-class MyDeps:  
-    http_client: httpx.Client
-    url:str = "http://127.0.0.1:8000/pizzas"
-
-def system_message(deps:MyDeps)->SystemMessage:
-    response = deps.http_client.get(deps.url)
-    if response.status_code == 200:
-        pizza_list = response.json()
+class Deps:
+    conn:httpx.AsyncClient
+    url:str
+# system_message 通过 context 获取获取 dep 值
+async def system_message(context):
+    conn = context['deps'].conn
+    response = await conn.get(context['deps'].url)
+    # print(response.json()['results'])
+    pokemon_list = [ Pokemon(name=item['name'],description="") for item in response.json()['results']]
     
-        return SystemMessage(content=f"""
-Pizzas
-{json.dumps(pizza_list)}
-""")
-    else:
-        console.print_exception(f"请求失败，状态码：{response.status_code}")
-        console.print(response.text)
-        return SystemMessage(content="")
+    return f"""
+基于 **Pokemon** 出现的 Pokemon 给与简单说明，就一句话
+** Pokemon **
+{",".join([ pokemon.name for pokemon in pokemon_list])}
 
+"""
+# 初始化 Agent 时候我们需要指定 Deps
+agent = Agent(
+    name="deps",
+    result_data_type=list[Pokemon]
+    )
+
+async def main():
+    async with httpx.AsyncClient() as client:
+        
+        dep = Deps(conn=client,url="https://pokeapi.co/api/v2/pokemon?limit=5")
+        
+        result = await agent.run("给出每一个 pokemon 的解释说明",run_context=RunContext(deps=dep))
+        print(result.get_data())
+
+if __name__ == "__main__":
+    asyncio.run(main=main())
+    
+```
+
+## 工具调用
+函数是其他模块的基础，可以看作 AI Agent 框架核心中的核心，所以这个模块设计好坏会直接影响到使用你整个 AI Agent 框架的体验。
+
+在 azent 中，支持将异步函数和同步函数作为工具提供给大语言模型。
+### 同步函数的调用
+#### 准备工具⚙️
+所谓工具也就是函数，或者类可能是一个接口。为了让一个函数成为工具，我们是要做额外工作。准备工作主要是为函数的参数指定类型，对于返回值也是需要指定类型的，并且要给出符合 python 格式的 doc 说明，为什么要这么做，一切准备工作都是为了让语言模型更好地了解工具，以便在合适的时候选择一个工具来使用。
+```python
+def get_weather(location:str)->float:
+    """获取某个城市天气的温度
+    Args:
+        location(str): 城市名称
+    Returns:
+        返回某个城市天气的温度
+    """
+    print(f"{location=}")
+    return 22.0
+```
+注册函数方式可以显式的，也可以隐式注册
+```python
+agent.bind_tool("get_weather",get_weather)
+```
+也可以通过 `@agent.tool` 这样注解方式来将函数绑定到语言模型
+```python
+@agent.tool
+def get_weather(location:str)->float:
+
+    """获取某个城市天气的温度
+    Args:
+        location(str): 城市名称
+    Returns:
+        返回某个城市天气的温度
+    """
+    print(f"{location=}")
+    return 22.0
+```
+
+这里做了一些优化，通过 `ToolManager` 类将对于工具管理从 Agent 移出来，通过一个外接工具管理器来注册工具以及管理工具。也就是减轻了 Agent 的负担。所以 `tool_manager` 负责对于工具管理，Agent 也是通过 bind_tool 将工具添加到 `tool_manager` 。
+
+
+```python
+async def main():
+    result = await agent.run(human_message)
+
+    for tool_message in result.get_message():
+        tool_call_result = await agent.tool_manager.execute_tool(tool_message)
+        console.print(tool_call_result.output)
+
+if __name__ == "__main__":
+    asyncio.run(main=main())
+```
+
+- 在 tool_manager 提供 `execute_tool` 用于执行函数
+
+### 异步函数调用
+
+```python
+
+async def get_weather(location:str)->float:
+
+    """获取某个城市天气的温度
+    Args:
+        location(str): 城市名称
+    Returns:
+        返回某个城市天气的温度
+    """
+
+    print(f"{location=}")
+    await asyncio.sleep(2) 
+    return 22.0
+```
+对于异步函数的绑定，除了要给函数名称，以及要绑定函数外，还需要给一个 `is_async = True`
+
+```python
+agent.bind_tool("get_weather",get_weather,is_async=True)
+```
+
+```python
+async def main():
+
+    result = await agent.run(human_message)
+    console.print(result.get_message()[0])
+    tool_call_result = await agent.tool_manager.execute_tool(result.get_message()[0])
+    console.print(tool_call_result.output)
+```
+### 也支持 context 这样绑定
+```python
+@agent.tool
+def get_weather(context,location:str)->float:
+
+    """获取某个城市天气的温度
+    Args:
+        location(str): 城市名称
+    Returns:
+        返回某个城市天气的温度
+    """
+    # TODO
+    print(context['deps']['name'])
+    print(f"{location=}")
+    return 22.0
+```
+也可以准备这样的工具，也就是第一个参数是 context, 这样工具在添加工具会过滤掉 context 这个参数。因为这个参数属于 Agent 内部上下文参数，而在 Agent 选择了第一个参数是 context 的工具，Agent 会自动补全这个参数。通常我们会将运行时 context。
+
+## 任务扭转
+
+```python
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
+from azent.handoff import handoff_with_tool
+from azent.tool import result_process
+from azent.core.message import HumanMessage,SystemMessage,BaseMessage
+from azent.context_manager.default_event_manager import DefaultEventManager
+from azent.context_manager import EventType
+from azent.utils import run_agent_loop
+console = Console()
+```
+
+```python
 
 # 初始化一个 client
 client = DeepSeekClient(name="deepseek-client")
+```
 
-human_message = HumanMessage(content="从 Pizzas 数据筛选配料中有蘑菇的披萨")
+```python
+# 准备 system message 和 human message 共同组成 prompt
+system_message = SystemMessage(content="""
+当收到用户的请求时，请仔细阅读并思考这个请求最适合由哪个助手来处理。
 
+如果用户的请求涉及到以下方面，请分配给 JavaScript 专家：
+- 网页前端开发 (HTML, CSS, JavaScript)
+- 浏览器行为和 DOM 操作
+- JavaScript 框架和库 (如 React, Angular, Vue.js)
+- Node.js 后端开发
+- 任何明确提及 JavaScript 语言的问题
 
-agent = Agent(
-    name="pizza_generator",
-    model_name="deepseek-chat",
-    system_message=system_message,
-    client=client,
-    context={},
+如果用户的请求涉及到以下方面，请分配给 Python 专家：
+- Web 后端开发 (如 Django, Flask)
+- 数据分析和处理 (如 Pandas, NumPy)
+- 机器学习和人工智能 (如 TensorFlow, PyTorch, Scikit-learn)
+- 自动化脚本和系统管理
+- 任何明确提及 Python 语言的问
+""")
+js_system_message = SystemMessage(content="you are very javascript expert")
+py_system_message = SystemMessage(content="you are very python expert")
+human_message = HumanMessage(content="用 JavaScript 写一个生成随机数的函数")
+
+# 初始化一个 JavaScript 专家智能体
+js_agent = Agent(
+    name="Js_Agent",
+    system_message=js_system_message,
     )
 
-with httpx.Client() as client:
-    deps = MyDeps(http_client=client)
-    result = agent.run(human_message,{'deps':deps})
-    print(result.get_text())
+# 初始化一个 Python 专家智能体
+py_agent = Agent(
+    name="Py_Agent",
+    system_message=py_system_message
+)
+
+route_agent = Agent(
+    name="Triage_Agent",
+    system_message=system_message,
+    )
+
+def on_handoff(agent_name):
+    console.print(agent_name)
+
+@handoff_with_tool(agent=js_agent,on_handoff=on_handoff)
+def handoff_js_agent(input:str):
+    """关于 JavaScript 方面编程问题可以转交给函数来完成
+    """
+    return input
+event_manager = DefaultEventManager()
+def on_message(message:BaseMessage):
+    console.print(Panel(message.content,title="user"))
+def on_response(message:BaseMessage):
+    console.print(Panel(message.content,title="Assistant"))
     
+event_manager.register_observer(EventType.OnMessage,on_message)
+event_manager.register_observer(EventType.OnResponse,on_response)
+
+route_agent.bind_tool("handoff_js_agent",handoff_js_agent)
+console.print(route_agent.available_tools)
+result = route_agent.sync_run(human_message)
+result_process(route_agent,result,event_manager,auto_call_agent=False)
 ```
+## 记忆机制
+- 记忆细胞
+- 记忆碎片
+- 记忆卡片

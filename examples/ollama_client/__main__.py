@@ -1,10 +1,10 @@
 from rich.console import Console
 from rich.markdown import Markdown
 
-from deepseekers.core import Agent,Client,Result
-from deepseekers.client import OllamaClient
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.result import OllamaResult
+from azent.core import Agent,Client,Result
+from azent.client import OllamaClient
+from azent.core.message import HumanMessage,SystemMessage
+from azent.result import OllamaResult
 console = Console()
 
 # 初始化一个 client

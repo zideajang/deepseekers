@@ -8,10 +8,10 @@ from rich.markdown import Markdown
 from rich.table import Table
 from rich.panel import Panel
 
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.core.message import ToolMessage,AIMessage
-from deepseekers.core.utils import _json_schema_to_example,print_config,function_to_json
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
+from azent.core.message import ToolMessage,AIMessage
+from azent.core.utils import _json_schema_to_example,print_config,function_to_json
 from examples.multi_agents.tools import order_dish,cancel_dish,show_menu,show_order,order_dishes
 from examples.multi_agents.model import restaurant_dishes
 console = Console()

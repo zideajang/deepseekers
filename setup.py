@@ -10,7 +10,7 @@ with open(path.join(here,"README.md"),encoding='utf-8') as f:
 #     requirements = [line.strip() for line in f if line]
 
 setup(
-    name='deepseekers',
+    name='azent',
     version='1.0.0',
     author='zidea',
     author_email='',

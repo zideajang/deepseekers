@@ -4,11 +4,11 @@ import re
 import subprocess
 from rich.console import Console
 
-import deepseekers
-from deepseekers.core import Project
-from deepseekers.core.utils import is_snake_case
+import azent
+from azent.core import Project
+from azent.core.utils import is_snake_case
 
-from deepseekers.core import Agent,DeepSeekClient
+from azent.core import Agent,DeepSeekClient
 
 # python 的版本要求
 # python 12
@@ -126,7 +126,7 @@ def generate_code(project:Project):
 
 
 
-with deepseekers.get_project(proj=auto_project) as project:
+with azent.get_project(proj=auto_project) as project:
     file_path = f"./examples/autocode/{project.name}/main.py"
     # 讨论如何
     result = discuss_project(project)

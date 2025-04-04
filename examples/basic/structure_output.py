@@ -3,9 +3,9 @@ import asyncio
 from rich.console import Console
 from rich.panel import Panel
 from pydantic import BaseModel,Field
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.core.utils import _json_schema_to_example
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
+from azent.core.utils import _json_schema_to_example
 
 console = Console()
 

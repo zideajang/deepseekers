@@ -3,13 +3,13 @@ import json
 from typing import List,Union
 from pydantic import BaseModel,Field
 
-from deepseekers.core import Project,Agent,DeepSeekClient
-from deepseekers.core.project import get_project
-from deepseekers.client import OllamaClient
-from deepseekers.result import OllamaResult
-from deepseekers.core.message import ToolMessage,AIMessage
-from deepseekers.core.project import Project,get_project
-from deepseekers.core.utils import _json_schema_to_example,print_messages
+from azent.core import Project,Agent,DeepSeekClient
+from azent.core.project import get_project
+from azent.client import OllamaClient
+from azent.result import OllamaResult
+from azent.core.message import ToolMessage,AIMessage
+from azent.core.project import Project,get_project
+from azent.core.utils import _json_schema_to_example,print_messages
 from rich.console import Console
 
 console = Console()

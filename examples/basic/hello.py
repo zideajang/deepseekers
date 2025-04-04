@@ -3,8 +3,8 @@ import asyncio
 from rich.console import Console
 from rich.markdown import Markdown
 
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
 console = Console()
 
 # 初始化一个 client

@@ -184,3 +184,6 @@ public
 .file
 build
 demos
+azent/perceptron
+config.yaml
+temp.py

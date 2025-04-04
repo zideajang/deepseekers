@@ -13,9 +13,9 @@ from tqdm import tqdm
 from pydantic import BaseModel,Field
 from ollama import ChatResponse, chat
 
-from deepseekers.core.utils import _json_schema_to_example
-from deepseekers.text_splitter import Doc
-from deepseekers.core import Agent,Client
+from azent.core.utils import _json_schema_to_example
+from azent.text_splitter import Doc
+from azent.core import Agent,Client
 
 import glob
 workspace_dir = "./examples/blog_generation/workspace/"

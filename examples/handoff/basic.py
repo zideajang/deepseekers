@@ -2,12 +2,12 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.handoff import handoff_with_tool
-from deepseekers.tool import result_process
-from deepseekers.core.message import HumanMessage,SystemMessage,BaseMessage
-from deepseekers.utils import run_agent_loop,EventManager,EventType,Span
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
+from azent.handoff import handoff_with_tool
+from azent.tool import result_process
+from azent.core.message import HumanMessage,SystemMessage,BaseMessage
+from azent.utils import run_agent_loop,EventManager,EventType,Span
 
 console = Console()
 

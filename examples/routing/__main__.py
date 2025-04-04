@@ -6,12 +6,12 @@ from rich.markdown import Markdown
 from typing import List
 from pydantic import BaseModel,Field
 from rich.panel import Panel
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.core.utils import _json_schema_to_example
+from azent.core import DeepSeekClient,Agent
+from azent.core.message import HumanMessage,SystemMessage
+from azent.core.utils import _json_schema_to_example
 # 生成数据
-from deepseekers.core.message import HumanMessage,SystemMessage
-from deepseekers.core.message import ToolMessage,AIMessage
+from azent.core.message import HumanMessage,SystemMessage
+from azent.core.message import ToolMessage,AIMessage
 
 console = Console()
 

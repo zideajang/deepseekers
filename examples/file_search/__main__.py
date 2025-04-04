@@ -3,9 +3,9 @@ import questionary
 from rich.console import Console
 from rich.panel import Panel
 
-from deepseekers.core.message import AIMessage,SystemMessage,ToolMessage,HumanMessage
-from deepseekers.file_search import chat_with_file,FileSearchEventManager,FileSearchEventType,FileEvent
-from deepseekers.core import DeepSeekClient,Agent
+from azent.core.message import AIMessage,SystemMessage,ToolMessage,HumanMessage
+from azent.file_search import chat_with_file,FileSearchEventManager,FileSearchEventType,FileEvent
+from azent.core import DeepSeekClient,Agent
 # 
 context_manager = FileSearchEventManager()
 def on_start_load_file(file_event:FileEvent):

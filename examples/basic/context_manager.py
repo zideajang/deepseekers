@@ -3,9 +3,9 @@ import json
 from rich.console import Console
 from rich.markdown import Markdown
 
-from deepseekers.core import DeepSeekClient,Agent
-from deepseekers.core.context_manager import DefaultContextManager
-from deepseekers.core.message import HumanMessage,SystemMessage,ToolMessage
+from azent.core import DeepSeekClient,Agent
+from azent.core.context_manager import DefaultContextManager
+from azent.core.message import HumanMessage,SystemMessage,ToolMessage
 console = Console()
 
 
